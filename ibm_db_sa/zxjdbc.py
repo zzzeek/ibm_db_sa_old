@@ -3,7 +3,7 @@
 # |                                                                          |
 # | (C) Copyright IBM Corporation 2008.                                      |
 # +--------------------------------------------------------------------------+
-# | This module complies with SQLAlchemy 0.4 and is                          |
+# | This module complies with SQLAlchemy 0.8 and is                          |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
 # | you may not use this file except in compliance with the License.         |
 # | You may obtain a copy of the License at                                  |
@@ -13,8 +13,9 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Jaimy Azle                                                      |
-# | Version: 0.2.x                                                           |
+# | Author: Jaimy Azle                                                       |
+# | Contributor: Mike Bayer                                                  |
+# | Version: 0.3.x                                                           |
 # +--------------------------------------------------------------------------+
 from decimal import Decimal as _python_Decimal
 from sqlalchemy import sql, util
@@ -166,50 +167,56 @@ class IBM_DBZxJDBCCompiler(ibm_base.IBM_DBCompiler):
 
 class IBM_DBZxJDBCDialect(ZxJDBCConnector, ibm_base.IBM_DBDialect):
 
-  supports_unicode_statements = supports_unicode_binds = \
-  returns_unicode_strings = supports_unicode = False
-  supports_sane_rowcount        = False
-  supports_sane_multi_rowcount  = False
+    supports_unicode_statements = supports_unicode_binds = \
+    returns_unicode_strings = supports_unicode = False
+    supports_sane_rowcount        = False
+    supports_sane_multi_rowcount  = False
 
-  jdbc_db_name = 'db2'
-  jdbc_driver_name = 'com.ibm.db2.jcc.DB2Driver'
+    jdbc_db_name = 'db2'
+    jdbc_driver_name = 'com.ibm.db2.jcc.DB2Driver'
 
-  statement_compiler = IBM_DBZxJDBCCompiler
-  execution_ctx_cls = IBM_DBZxJDBCExecutionContext
+    statement_compiler = IBM_DBZxJDBCCompiler
+    execution_ctx_cls = IBM_DBZxJDBCExecutionContext
 
-  colspecs = util.update_copy(
+    colspecs = util.update_copy(
       ibm_base.IBM_DBDialect.colspecs,
       {
             sa_types.Date : IBM_DBZxJDBCDate,
             sa_types.Numeric: IBM_DBZxJDBCNumeric
       }
-  )
+    )
 
-  def __init__(self, use_ansiquotes=None, **kwargs):
-    super(IBM_DBZxJDBCDialect, self).__init__(**kwargs)
-    self.paramstyle = IBM_DBZxJDBCDialect.dbapi().paramstyle
+    def __init__(self, use_ansiquotes=None, **kwargs):
+        super(IBM_DBZxJDBCDialect, self).__init__(**kwargs)
+        self.paramstyle = IBM_DBZxJDBCDialect.dbapi().paramstyle
 
-    global SQLException, zxJDBC
-    from java.sql import SQLException, Types as java_Types
-    from com.ziclix.python.sql import zxJDBC
-    from com.ziclix.python.sql import FilterDataHandler
+        global SQLException, zxJDBC
+        from java.sql import SQLException, Types as java_Types
+        from com.ziclix.python.sql import zxJDBC
+        from com.ziclix.python.sql import FilterDataHandler
 
-    class IBM_DB2DataHandler(FilterDataHandler):
+        class IBM_DB2DataHandler(FilterDataHandler):
 
-      def setJDBCObject(self, statement, index, object, dbtype=None):
-        if type(object) is ReturningParam:
-          statement.registerReturnParameter(index, object.type)
-        elif dbtype is None:
-          if (isinstance(object, int)):
-            statement.setObject(index, str(object), java_Types.BIGINT)
-          elif (isinstance(object, _python_Decimal)):
-            statement.setObject(index, str(object), java_Types.DECIMAL)
-          else:
-            statement.setObject(index, object)
-        else:
-          FilterDataHandler.setJDBCObject(self, statement, index, object, dbtype)
+          def setJDBCObject(self, statement, index, object, dbtype=None):
+            if type(object) is ReturningParam:
+              statement.registerReturnParameter(index, object.type)
+            elif dbtype is None:
+              if (isinstance(object, int)):
+                statement.setObject(index, str(object), java_Types.BIGINT)
+              elif (isinstance(object, _python_Decimal)):
+                statement.setObject(index, str(object), java_Types.DECIMAL)
+              else:
+                statement.setObject(index, object)
+            else:
+              FilterDataHandler.setJDBCObject(self, statement, index, object, dbtype)
 
-    self.DataHandler = IBM_DB2DataHandler
+        self.DataHandler = IBM_DB2DataHandler
+
+
+class IBM_DB400ZxJDBCDialect(IBM_DBZxJDBCDialect):
+    jdbc_db_name = 'as400'
+    jdbc_driver_name = 'com.ibm.as400.access.AS400JDBCDriver'
+
 
 
 dialect = IBM_DBZxJDBCDialect

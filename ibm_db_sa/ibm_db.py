@@ -3,7 +3,7 @@
 # |                                                                          |
 # | (C) Copyright IBM Corporation 2008.                                      |
 # +--------------------------------------------------------------------------+
-# | This module complies with SQLAlchemy 0.4 and is                          |
+# | This module complies with SQLAlchemy 0.8 and is                          |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
 # | you may not use this file except in compliance with the License.         |
 # | You may obtain a copy of the License at                                  |
@@ -14,8 +14,8 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Alex Pitigoi, Abhigyan Agrawal                                  |
-# | Contributor: Jaimy Azle                                                  |
-# | Version: 0.2.x                                                           |
+# | Contributors: Jaimy Azle, Mike Bayer                                     |
+# | Version: 0.3.x                                                           |
 # +--------------------------------------------------------------------------+
 
 from sqlalchemy import schema, sql, util

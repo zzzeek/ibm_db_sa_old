@@ -3,7 +3,7 @@
 # |                                                                          |
 # | (C) Copyright IBM Corporation 2008.                                      |
 # +--------------------------------------------------------------------------+
-# | This module complies with SQLAlchemy 0.4 and is                          |
+# | This module complies with SQLAlchemy 0.8 and is                          |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
 # | you may not use this file except in compliance with the License.         |
 # | You may obtain a copy of the License at                                  |
@@ -130,5 +130,30 @@ class IBM_DBPyODBCDialect(PyODBCConnector, ibm_base.IBM_DBDialect):
 
         connectors.extend(['%s=%s' % (k,v) for k,v in keys.iteritems()])
     return [[";".join (connectors)], connect_args]
+
+class IBM_DB400PyODBCDialect(PyODBCConnector, ibm_base.IBM_DBDialect):
+
+    supports_unicode_statements = False
+    supports_sane_rowcount = False
+    supports_sane_multi_rowcount = False
+    supports_native_decimal = True
+    supports_char_length = True
+    supports_native_decimal = False
+
+    pyodbc_driver_name = "IBM DB2 ODBC DRIVER"
+    colspecs = util.update_copy(
+      ibm_base.IBM_DBDialect.colspecs,
+      {
+            sa_types.Date: IBM_DBPyODBCDate,
+            sa_types.Numeric: IBM_DBPyODBCNumeric
+      }
+    )
+
+    def __init__(self, use_ansiquotes=None, **kwargs):
+        kwargs.setdefault('convert_unicode', True)
+        super(IBM_DB400PyODBCDialect, self).__init__(**kwargs)
+        self.paramstyle = IBM_DB400PyODBCDialect.dbapi().paramstyle
+
+
 
 dialect = IBM_DBPyODBCDialect
