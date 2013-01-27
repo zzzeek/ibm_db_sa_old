@@ -30,14 +30,15 @@ setup(
          long_description=open(readme).read(),
          platforms='All',
          install_requires=['sqlalchemy>=0.7.3'],
-         packages=['ibm_db'],
+         packages=['ibm_db_sa'],
         entry_points={
          'sqlalchemy.dialects': [
-                     'ibm_db_sa=ibm_db_sa.ibm_db:DB2Dialect_ibmdb',
-                     'ibm_db_sa.zxjdbc=ibm_db_sa.zxjdbc:DB2Dialect_zxjdbc',
-                     'ibm_db_sa.pyodbc=ibm_db_sa.pyodbc:DB2Dialect_pyodbc',
-                     'ibm_db_sa.zxjdbc400=ibm_db_sa.zxjdbc:AS400Dialect_zxjdbc',
-                     'ibm_db_sa.pyodbc400=ibm_db_sa.pyodbc:AS400Dialect_pyodbc',
+                     'db2=ibm_db_sa.ibm_db:DB2Dialect_ibm_db',
+                     'db2.ibm_db=ibm_db_sa.ibm_db:DB2Dialect_ibm_db',
+                     'db2.zxjdbc=ibm_db_sa.zxjdbc:DB2Dialect_zxjdbc',
+                     'db2.pyodbc=ibm_db_sa.pyodbc:DB2Dialect_pyodbc',
+                     'db2.zxjdbc400=ibm_db_sa.zxjdbc:AS400Dialect_zxjdbc',
+                     'db2.pyodbc400=ibm_db_sa.pyodbc:AS400Dialect_pyodbc',
                     ]
        },
        zip_safe=False,

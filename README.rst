@@ -42,13 +42,13 @@ A TCP/IP connection can be specified as the following::
 
 	from sqlalchemy import create_engine
 
-	e = create_engine("ibm_db_sa://user:pass@host[:port]/database")
+	e = create_engine("db2+ibm_db://user:pass@host[:port]/database")
 
 For a local socket connection, exclude the "host" and "port" portions::
 
 	from sqlalchemy import create_engine
 
-	e = create_engine("ibm_db_sa://user:pass@/database")
+	e = create_engine("db2+ibm_db://user:pass@/database")
 
 Supported Databases
 -------------------
