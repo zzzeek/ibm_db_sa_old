@@ -23,8 +23,8 @@ from ibm_db_sa import base as ibm_base
 
 class IBM_DB_SAExecutionContext(ibm_base.IBM_DBExecutionContext):
 
-  def get_lastrowid(self):
-    return self.cursor.last_identity_val
+    def get_lastrowid(self):
+        return self.cursor.last_identity_val
 
 class IBM_DB_SADialect(ibm_base.IBM_DBDialect):
 

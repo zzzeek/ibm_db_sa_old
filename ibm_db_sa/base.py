@@ -452,6 +452,9 @@ class IBM_DBIdentifierPreparer(compiler.IdentifierPreparer):
 
 
 class IBM_DBExecutionContext(default.DefaultExecutionContext):
+    pass
+
+class _SelectLastRowIDMixin(object):
     _select_lastrowid = False
     _lastrowid = None
 
@@ -459,6 +462,9 @@ class IBM_DBExecutionContext(default.DefaultExecutionContext):
         return self._execute_scalar("SELECT NEXTVAL FOR " +
                     self.dialect.identifier_preparer.format_sequence(seq) +
                     " FROM SYSIBM.SYSDUMMY1", type_)
+
+    def getlastrowid(self):
+        return self._lastrowid
 
     def pre_exec(self):
         if self.isinsert:
