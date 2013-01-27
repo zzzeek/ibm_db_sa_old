@@ -14,11 +14,25 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Alex Pitigoi, Abhigyan Agrawal                                  |
-# | Contributor: Jaimy Azle                                                  |
-# | Version: 0.2.x                                                           |
+# | Contributors: Jaimy Azle, Mike Bayer                                     |
+# | Version: 0.3.x                                                           |
 # +--------------------------------------------------------------------------+
-from ibm_db_sa import base, ibm_db, zxjdbc, pyodbc
-from ibm_db_sa import base400, zxjdbc400, pyodbc400
+
+from . import ibm_db, pyodbc, zxjdbc, base
 
 # default dialect
 base.dialect = ibm_db.dialect
+
+from .base import \
+    BIGINT, BINARY, BIT, BLOB, BOOLEAN, CHAR, DATE, DATETIME, \
+    DECIMAL, DOUBLE, ENUM, DECIMAL,\
+    FLOAT, GRAPHIC, INTEGER, INTEGER, LONGBLOB, LONGTEXT, MEDIUMBLOB, \
+    MEDIUMINT, MEDIUMTEXT, NCHAR, \
+    NVARCHAR, NUMERIC, SET, SMALLINT, REAL, TEXT, TIME, TIMESTAMP, \
+    TINYBLOB, TINYINT, TINYTEXT,\
+    VARBINARY, VARCHAR, VARGRAPHIC, dialect
+
+#__all__ = (
+    # TODO: (put types here)
+#    'dialect'
+#)

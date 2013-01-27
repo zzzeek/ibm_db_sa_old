@@ -20,22 +20,15 @@
 """Support for IBM DB2 database
 
 """
-import re
 import datetime
-from decimal import Decimal as _python_Decimal
 from sqlalchemy import types as sa_types
 from sqlalchemy import schema as sa_schema
-from sqlalchemy import __version__ as __sa_version__
-from sqlalchemy import log, processors
 from sqlalchemy.sql import compiler
 from sqlalchemy.engine import default
-from sqlalchemy.types import TypeDecorator, Unicode
 
-from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.engine import reflection
-from sqlalchemy import sql, util
 
-from . import reflection
+from . import reflection as ibm_reflection
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
@@ -141,9 +134,11 @@ class _IBM_DateTime(sa_types.DateTime):
                 return None
             if isinstance(value, datetime.datetime):
                 value = datetime.datetime(value.year, value.month, value.day,
-                         value.hour, value.minute, value.second, value.microsecond)
+                         value.hour,
+                         value.minute, value.second, value.microsecond)
             elif isinstance(value, datetime.time):
-                value = datetime.datetime(value.year, value.month, value.day, 0, 0, 0, 0)
+                value = datetime.datetime(value.year,
+                                    value.month, value.day, 0, 0, 0, 0)
             return value
         return process
 
@@ -178,6 +173,9 @@ class _IBM_Date(sa_types.Date):
             return str(value)
         return process
 
+class DBCLOB(sa_types.CLOB):
+    __visit_name__ = "DBCLOB"
+
 class GRAPHIC(sa_types.CHAR):
     __visit_name__ = "GRAPHIC"
 
@@ -188,8 +186,6 @@ class VARGRAPHIC(sa_types.UnicodeText):
 class XML(sa_types.Text):
     __visit_name__ = "XML"
 
-# Module level dictionary maps standard SQLAlchemy types to IBM_DB data types.
-# The dictionary uses the SQLAlchemy data types as key, and maps an IBM_DB type as its value
 colspecs = {
     sa_types.Boolean: _IBM_Boolean,
     sa_types.DateTime: _IBM_DateTime,
@@ -201,119 +197,112 @@ colspecs = {
 
 class IBM_DBTypeCompiler(compiler.GenericTypeCompiler):
 
-  def visit_now_func(self, fn, **kw):
-    return "CURRENT_TIMESTAMP"
 
-  def visit_TIMESTAMP(self, type_):
-    return "TIMESTAMP"
+    def visit_TIMESTAMP(self, type_):
+        return "TIMESTAMP"
 
-  def visit_DATE(self, type_):
-    return "DATE"
+    def visit_DATE(self, type_):
+        return "DATE"
 
-  def visit_TIME(self, type_):
-    return "TIME"
+    def visit_TIME(self, type_):
+        return "TIME"
 
-  def visit_DATETIME(self, type_):
-    return self.visit_TIMESTAMP(type_)
+    def visit_DATETIME(self, type_):
+        return self.visit_TIMESTAMP(type_)
 
-  def visit_SMALLINT(self, type_):
-    return "SMALLINT"
+    def visit_SMALLINT(self, type_):
+        return "SMALLINT"
 
-  def visit_INT(self, type_):
-    return "INT"
+    def visit_INT(self, type_):
+        return "INT"
 
-  def visit_BIGINT(self, type_):
-    return "BIGINT"
+    def visit_BIGINT(self, type_):
+        return "BIGINT"
 
-  def visit_FLOAT(self, type_):
-    return "REAL"
+    def visit_FLOAT(self, type_):
+        return "REAL"
 
-  def visit_XML(self, type_):
-    return "XML"
+    def visit_XML(self, type_):
+        return "XML"
 
-  def visit_CLOB(self, type_):
-    return "CLOB"
+    def visit_CLOB(self, type_):
+        return "CLOB"
 
-  def visit_BLOB(self, type_):
-    return "BLOB(1M)" if type_.length in (None, 0) else \
-        "BLOB(%(length)s)" % {'length' : type_.length}
+    def visit_BLOB(self, type_):
+        return "BLOB(1M)" if type_.length in (None, 0) else \
+                "BLOB(%(length)s)" % {'length': type_.length}
 
-  def visit_DBCLOB(self, type_):
-    return "DBCLOB(1M)" if type_.length in (None, 0) else \
-        "DBCLOB(%(length)s)" % {'length' : type_.length}
+    def visit_DBCLOB(self, type_):
+        return "DBCLOB(1M)" if type_.length in (None, 0) else \
+                "DBCLOB(%(length)s)" % {'length': type_.length}
 
-  def visit_VARCHAR(self, type_):
-    if self.dialect.supports_char_length:
-      return "LONG VARCHAR" if type_.length in (None, 0) else \
-        "VARCHAR(%(length)s)" % {'length' : type_.length}
-    else:
-      return "LONG VARCHAR"
+    def visit_VARCHAR(self, type_):
+        if self.dialect.supports_char_length:
+            return "LONG VARCHAR" if type_.length in (None, 0) else \
+                "VARCHAR(%(length)s)" % {'length': type_.length}
+        else:
+            return "LONG VARCHAR"
 
-  def visit_VARGRAPHIC(self, type_):
-    if self.dialect.supports_char_length:
-      return "LONG VARGRAPHIC" if type_.length in (None, 0) else \
-        "VARGRAPHIC(%(length)s)" % {'length' : type_.length}
-    else:
-      return "LONG VARGRAPHIC"
+    def visit_VARGRAPHIC(self, type_):
+        if self.dialect.supports_char_length:
+            return "LONG VARGRAPHIC" if type_.length in (None, 0) else \
+                "VARGRAPHIC(%(length)s)" % {'length': type_.length}
+        else:
+            return "LONG VARGRAPHIC"
 
-  def visit_CHAR(self, type_):
-    return "CHAR" if type_.length in (None, 0) else \
-        "CHAR(%(length)s)" % {'length' : type_.length}
+    def visit_CHAR(self, type_):
+        return "CHAR" if type_.length in (None, 0) else \
+                "CHAR(%(length)s)" % {'length': type_.length}
 
-  def visit_GRAPHIC(self, type_):
-    return "GRAPHIC" if type_.length in (None, 0) else \
-        "GRAPHIC(%(length)s)" % {'length' : type_.length}
+    def visit_GRAPHIC(self, type_):
+        return "GRAPHIC" if type_.length in (None, 0) else \
+                "GRAPHIC(%(length)s)" % {'length': type_.length}
 
-  def visit_DECIMAL(self, type_):
-    if not type_.precision:
-      return "DECIMAL(31, 0)"
-    elif not type_.scale:
-      return "DECIMAL(%(precision)s, 0)" % {'precision': type_.precision}
-    else:
-      return "DECIMAL(%(precision)s, %(scale)s)" % {'precision': type_.precision, 'scale': type_.scale}
+    def visit_DECIMAL(self, type_):
+        if not type_.precision:
+            return "DECIMAL(31, 0)"
+        elif not type_.scale:
+            return "DECIMAL(%(precision)s, 0)" % {'precision': type_.precision}
+        else:
+            return "DECIMAL(%(precision)s, %(scale)s)" % {
+                            'precision': type_.precision, 'scale': type_.scale}
 
 
-  def visit_numeric(self, type_):
-    return self.visit_DECIMAL(type_)
+    def visit_numeric(self, type_):
+        return self.visit_DECIMAL(type_)
 
-  def visit_datetime(self, type_):
-    return self.visit_TIMESTAMP(type_)
+    def visit_datetime(self, type_):
+        return self.visit_TIMESTAMP(type_)
 
-  def visit_date(self, type_):
-    return self.visit_DATE(type_)
+    def visit_date(self, type_):
+        return self.visit_DATE(type_)
 
-  def visit_time(self, type_):
-    return self.visit_TIME(type_)
+    def visit_time(self, type_):
+        return self.visit_TIME(type_)
 
-  def visit_integer(self, type_):
-    return self.visit_INT(type_)
+    def visit_integer(self, type_):
+        return self.visit_INT(type_)
 
-  def visit_boolean(self, type_):
-    return self.visit_SMALLINT(type_)
+    def visit_boolean(self, type_):
+        return self.visit_SMALLINT(type_)
 
-  def visit_float(self, type_):
-    return self.visit_FLOAT(type_)
+    def visit_float(self, type_):
+        return self.visit_FLOAT(type_)
 
-  def visit_Float(self, type_):
-    return self.visit_FLOAT(type_)
+    def visit_unicode(self, type_):
+        return self.visit_VARGRAPHIC(type_)
 
-  def visit_unicode(self, type_):
-    return self.visit_VARGRAPHIC(type_)
+    def visit_unicode_text(self, type_):
+        return self.visit_VARGRAPHIC(type_)
 
-  def visit_unicode_text(self, type_):
-    return self.visit_VARGRAPHIC(type_)
+    def visit_string(self, type_):
+        return self.visit_VARCHAR(type_)
 
-  def visit_string(self, type_):
-    return self.visit_VARCHAR(type_)
+    def visit_TEXT(self, type_):
+        return self.visit_VARCHAR(type_)
 
-  def visit_TEXT(self, type_):
-    return self.visit_VARCHAR(type_)
-
-  def visit_boolean(self, type_):
-    return self.visit_SMALLINT(type_)
-
-  def visit_large_binary(self, type_):
-    return self.visit_BLOB(type_)
+    def visit_large_binary(self, type_):
+        return self.visit_BLOB(type_)
 
 
 class IBM_DBCompiler(compiler.SQLCompiler):
@@ -329,7 +318,8 @@ class IBM_DBCompiler(compiler.SQLCompiler):
             return ""
 
     def default_from(self):
-        return  " FROM SYSIBM.SYSDUMMY1"   # DB2 uses SYSIBM.SYSDUMMY1 table for row count
+        # DB2 uses SYSIBM.SYSDUMMY1 table for row count
+        return  " FROM SYSIBM.SYSDUMMY1"
 
     #def visit_function(self, func, result_map=None, **kwargs):
     # TODO: this is wrong but need to know what DB2 is expecting here
@@ -374,195 +364,160 @@ class IBM_DBCompiler(compiler.SQLCompiler):
 
 class IBM_DBDDLCompiler(compiler.DDLCompiler):
 
-  def get_column_specification(self, column, **kw):
-    """Inputs:  Column object to be specified as a string
-                Boolean indicating whether this is the first column of the primary key
-       Returns: String, representing the column type and attributes,
-                including primary key, default values, and whether or not it is nullable.
-    """
-    # column-definition: column-name:
-    col_spec = [self.preparer.format_column(column)]
-    # data-type:
-    col_spec.append(column.type.dialect_impl(self.dialect).get_col_spec())
+    def get_column_specification(self, column, **kw):
+        col_spec = [self.preparer.format_column(column)]
+        col_spec.append(column.type.dialect_impl(self.dialect).get_col_spec())
 
-    # column-options: "NOT NULL"
-    if not column.nullable or column.primary_key:
-      col_spec.append('NOT NULL')
+        # column-options: "NOT NULL"
+        if not column.nullable or column.primary_key:
+            col_spec.append('NOT NULL')
 
-    # default-clause:
-    default = self.get_column_default_string(column)
-    if default is not None:
-      col_spec.append('WITH DEFAULT')
-      #default = default.lstrip("'").rstrip("'")
-      col_spec.append(default)
+        # default-clause:
+        default = self.get_column_default_string(column)
+        if default is not None:
+            col_spec.append('WITH DEFAULT')
+            col_spec.append(default)
 
-    # generated-column-spec:
+        if column is column.table._autoincrement_column:
+            col_spec.append('GENERATED BY DEFAULT')
+            col_spec.append('AS IDENTITY')
+            col_spec.append('(START WITH 1)')
 
-    # identity-options:
-    # example:  id INT GENERATED BY DEFAULT AS IDENTITY (START WITH 1),
-    if column.primary_key    and \
-       column.autoincrement  and \
-       isinstance(column.type, sa_types.Integer) and \
-       not getattr(self, 'has_IDENTITY', False): # allowed only for a single PK
-      col_spec.append('GENERATED BY DEFAULT')
-      col_spec.append('AS IDENTITY')
-      col_spec.append('(START WITH 1)')
-      self.has_IDENTITY = True                   # flag the existence of identity PK
+        column_spec = ' '.join(col_spec)
+        return column_spec
 
-    column_spec = ' '.join(col_spec)
-    return column_spec
+    def visit_drop_index(self, drop):
+        return "\nDROP INDEX %s" % (
+                        self.preparer.quote(
+                                    self._index_identifier(drop.element.name),
+                                    drop.element.quote)
+                        )
 
-  # Defines SQL statement to be executed after table creation
-  def post_create_table(self, table):
-    if hasattr( self , 'has_IDENTITY' ):    # remove identity PK flag once table is created
-      del self.has_IDENTITY
-    return ""
-
-  def visit_drop_index(self, drop):
-    index = drop.element
-    return "\nDROP INDEX %s" % (
-            self.preparer.quote(
-                        self._index_identifier(drop.element.name),
-                        drop.element.quote)
-            )
-
-  def visit_drop_constraint(self, drop):
-    constraint = drop.element
-    if isinstance(constraint, sa_schema.ForeignKeyConstraint):
-        qual = "FOREIGN KEY "
-        const = self.preparer.format_constraint(constraint)
-    elif isinstance(constraint, sa_schema.PrimaryKeyConstraint):
-        qual = "PRIMARY KEY "
-        const = ""
-    elif isinstance(constraint, sa_schema.UniqueConstraint):
-        qual = "INDEX "
-        const = self.preparer.format_constraint(constraint)
-    else:
-        qual = ""
-        const = self.preparer.format_constraint(constraint)
-    return "ALTER TABLE %s DROP %s%s" % \
-                (self.preparer.format_table(constraint.table),
-                qual, const)
+    def visit_drop_constraint(self, drop):
+        constraint = drop.element
+        if isinstance(constraint, sa_schema.ForeignKeyConstraint):
+                qual = "FOREIGN KEY "
+                const = self.preparer.format_constraint(constraint)
+        elif isinstance(constraint, sa_schema.PrimaryKeyConstraint):
+                qual = "PRIMARY KEY "
+                const = ""
+        elif isinstance(constraint, sa_schema.UniqueConstraint):
+                qual = "INDEX "
+                const = self.preparer.format_constraint(constraint)
+        else:
+                qual = ""
+                const = self.preparer.format_constraint(constraint)
+        return "ALTER TABLE %s DROP %s%s" % \
+                                (self.preparer.format_table(constraint.table),
+                                qual, const)
 
 class IBM_DBIdentifierPreparer(compiler.IdentifierPreparer):
 
-  reserved_words = RESERVED_WORDS
-  illegal_initial_characters = set(xrange(0, 10)).union(["_", "$"])
+    reserved_words = RESERVED_WORDS
+    illegal_initial_characters = set(xrange(0, 10)).union(["_", "$"])
 
-  def __init__(self, dialect, **kw):
-    super(IBM_DBIdentifierPreparer, self).__init__(dialect, initial_quote='"', \
-      final_quote='"')
-
-  def _bindparam_requires_quotes(self, value):
-    return (value.lower() in self.reserved_words
-            or value[0] in self.illegal_initial_characters
-            or not self.legal_characters.match(unicode(value))
-            )
 
 
 class IBM_DBExecutionContext(default.DefaultExecutionContext):
+    _select_lastrowid = False
+    _lastrowid = None
+
     def fire_sequence(self, seq, type_):
         return self._execute_scalar("SELECT NEXTVAL FOR " +
                     self.dialect.identifier_preparer.format_sequence(seq) +
                     " FROM SYSIBM.SYSDUMMY1", type_)
 
-    def get_lastrowid(self):
-      cursor = self.create_cursor()
-      cursor.execute("SELECT IDENTITY_VAL_LOCAL() "+
-          "FROM SYSIBM.SYSDUMMY1")
-      lastrowid = cursor.fetchone()[0]
-      cursor.close()
-      if lastrowid is not None:
-        lastrowid = int(lastrowid)
-      return lastrowid
+    def pre_exec(self):
+        if self.isinsert:
+            tbl = self.compiled.statement.table
+            seq_column = tbl._autoincrement_column
+            insert_has_sequence = seq_column is not None
+
+            self._select_lastrowid = insert_has_sequence and \
+                                        not self.compiled.returning and \
+                                        not self.compiled.inline
+
+    def post_exec(self):
+        conn = self.root_connection
+        if self._select_lastrowid:
+            conn._cursor_execute(self.cursor,
+                    "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1",
+                    (), self)
+            row = self.cursor.fetchall()[0]
+            if row[0] is not None:
+                self._lastrowid = int(row[0])
+
 
 class IBM_DBDialect(default.DefaultDialect):
 
-  name = 'ibm_db_sa'
-  max_identifier_length = 128
-  encoding = 'utf-8'
-  default_paramstyle = 'named'
-  colspecs = colspecs
-  ischema_names = reflection.ischema_names
-  supports_char_length = False
-  supports_unicode_statements = False
-  supports_unicode_binds = False
-  returns_unicode_strings = False
-  postfetch_lastrowid = True
-  supports_sane_rowcount = False
-  supports_sane_multi_rowcount = False
-  supports_native_decimal = True
-  preexecute_sequences = False
-  supports_alter = True
-  supports_sequences = True
-  sequences_optional = True
+    name = 'ibm_db_sa'
+    max_identifier_length = 128
+    encoding = 'utf-8'
+    default_paramstyle = 'named'
+    colspecs = colspecs
+    ischema_names = reflection.ischema_names
+    supports_char_length = False
+    supports_unicode_statements = False
+    supports_unicode_binds = False
+    returns_unicode_strings = False
+    postfetch_lastrowid = True
+    supports_sane_rowcount = False
+    supports_sane_multi_rowcount = False
+    supports_native_decimal = True
+    preexecute_sequences = False
+    supports_alter = True
+    supports_sequences = True
+    sequences_optional = True
 
-  statement_compiler = IBM_DBCompiler
-  ddl_compiler = IBM_DBDDLCompiler
-  type_compiler = IBM_DBTypeCompiler
-  preparer = IBM_DBIdentifierPreparer
-  execution_ctx_cls = IBM_DBExecutionContext
+    statement_compiler = IBM_DBCompiler
+    ddl_compiler = IBM_DBDDLCompiler
+    type_compiler = IBM_DBTypeCompiler
+    preparer = IBM_DBIdentifierPreparer
+    execution_ctx_cls = IBM_DBExecutionContext
 
-  def __init__(self, use_ansiquotes=None, **kwargs):
-    super(IBM_DBDialect, self).__init__(**kwargs)
+    _reflector_cls = ibm_reflection.IBM_DBReflector
+
+    def __init__(self, **kw):
+        super(IBM_DBDialect, self).__init__(**kw)
+
+        self._reflector = self._reflector_cls(self)
+
+    # reflection: these all defer to an BaseIBM_DBReflector
+    # object which selects between DB2 and AS/400 schemas
+    def has_table(self, connection, table_name, schema=None):
+        return self._reflector.has_table(connection, table_name, schema=schema)
+
+    def has_sequence(self, connection, sequence_name, schema=None):
+        return self._reflector.has_table(connection, sequence_name,
+                        schema=schema)
+
+    def get_schema_names(self, connection, **kw):
+        return self._reflector.get_schema_names(connection, **kw)
 
 
+    def get_table_names(self, connection, schema=None, **kw):
+        return self._reflector.get_table_names(connection, schema=schema, **kw)
 
-  # Returns the converted SA adapter type for a given generic vendor type provided
-  @classmethod
-  def type_descriptor(self, typeobj):
-    """ Inputs: generic type to be converted
-        Returns: converted adapter type
-    """
-    return sa_types.adapt_type(typeobj, colspecs)
+    def get_view_names(self, connection, schema=None, **kw):
+        return self._reflector.get_view_names(connection, schema=schema, **kw)
 
-  def _compat_fetchall(self, rp, charset=None):
-    return [_DecodingRowProxy(row, charset) for row in rp.fetchall()]
+    def get_view_definition(self, connection, viewname, schema=None, **kw):
+        return self._reflector.get_view_definition(
+                                connection, viewname, schema=schema, **kw)
 
-  def _compat_fetchone(self, rp, charset=None):
-    return _DecodingRowProxy(rp.fetchone(), charset)
+    def get_columns(self, connection, table_name, schema=None, **kw):
+        return self._reflector.has_columns(
+                                connection, table_name, schema=schema, **kw)
 
-  def _compat_first(self, rp, charset=None):
-    return _DecodingRowProxy(rp.first(), charset)
+    def get_primary_keys(self, connection, table_name, schema=None, **kw):
+        return self._reflector.get_primary_keys(
+                                connection, table_name, schema=schema, **kw)
 
-log.class_logger(IBM_DBDialect)
+    def get_foreign_keys(self, connection, table_name, schema=None, **kw):
+        return self._reflector.get_foreign_keys(
+                                connection, table_name, schema=schema, **kw)
 
-class _DecodingRowProxy(object):
-  """Return unicode-decoded values based on type inspection.
-
-  Smooth over data type issues (esp. with alpha driver versions) and
-  normalize strings as Unicode regardless of user-configured driver
-  encoding settings.
-
-  """
-  def __init__(self, rowproxy, charset):
-    self.rowproxy = rowproxy
-    self.charset = charset
-
-  def __getitem__(self, index):
-    item = self.rowproxy[index]
-    if isinstance(item, _array):
-        item = item.tostring()
-    # Py2K
-    if self.charset and isinstance(item, str):
-    # end Py2K
-    # Py3K
-    #if self.charset and isinstance(item, bytes):
-      return item.decode(self.charset)
-    else:
-      return item
-
-  def __getattr__(self, attr):
-    item = getattr(self.rowproxy, attr)
-    if isinstance(item, _array):
-      item = item.tostring()
-    # Py2K
-    if self.charset and isinstance(item, str):
-    # end Py2K
-    # Py3K
-    #if self.charset and isinstance(item, bytes):
-      return item.decode(self.charset)
-    else:
-      return item
-
+    def get_indexes(self, connection, table_name, schema=None, **kw):
+        return self._reflector.get_indexes(
+                                connection, table_name, schema=schema, **kw)
 
