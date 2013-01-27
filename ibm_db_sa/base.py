@@ -29,7 +29,7 @@ from sqlalchemy.engine import default
 from . import reflection as ibm_reflection
 
 from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER,\
-    SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, DOUBLE, TIME, TIMESTAMP,\
+    SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP,\
     VARCHAR
 
 
@@ -176,6 +176,9 @@ class _IBM_Date(sa_types.Date):
             return str(value)
         return process
 
+class DOUBLE(sa_types.Numeric):
+    __visit_name__ = 'DOUBLE'
+
 class LONGVARCHAR(sa_types.VARCHAR):
     __visit_name_ = 'LONGVARCHAR'
 
@@ -250,7 +253,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
     def visit_BIGINT(self, type_):
         return "BIGINT"
 
-    def visit_FLOAT(self, type_):
+    def visit_REAL(self, type_):
         return "REAL"
 
     def visit_XML(self, type_):
@@ -318,7 +321,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         return self.visit_SMALLINT(type_)
 
     def visit_float(self, type_):
-        return self.visit_FLOAT(type_)
+        return self.visit_REAL(type_)
 
     def visit_unicode(self, type_):
         return self.visit_VARGRAPHIC(type_)
@@ -359,20 +362,19 @@ class DB2Compiler(compiler.SQLCompiler):
     #   else:
     #        return compiler.SQLCompiler.visit_function(self, func, **kwargs)
 
-    def visit_typeclause(self, typeclause):
-        type_ = typeclause.type.dialect_impl(self.dialect)
-        if isinstance(type_, (sa_types.TIMESTAMP, sa_types.DECIMAL, \
-            sa_types.DateTime, sa_types.Date, sa_types.Time)):
-            return self.dialect.type_compiler.process(type_)
-        else:
-            return None
 
-    #def visit_cast(self, cast, **kwargs):
-    # TODO: don't know what this is about either
-    #    type_ = self.process(cast.typeclause)
-    #    if type_ is None:
-    #       return self.process(cast.clause)
-    #   return 'CAST(%s AS %s)' % (self.process(cast.clause), type_)
+    def visit_cast(self, cast, **kw):
+        type_ = cast.typeclause.type
+
+        # TODO: verify that CAST shouldn't be called with
+        # other types, I was able to CAST against VARCHAR
+        # for example
+        if isinstance(type_, (
+                    sa_types.DateTime, sa_types.Date, sa_types.Time,
+                    sa_types.DECIMAL)):
+            return super(DB2Compiler, self).visit_cast(cast, **kw)
+        else:
+            return self.process(cast.clause)
 
     def get_select_precolumns(self, select):
         if isinstance(select._distinct, basestring):
@@ -397,7 +399,8 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
     def get_column_specification(self, column, **kw):
         col_spec = [self.preparer.format_column(column)]
-        col_spec.append(column.type.dialect_impl(self.dialect).get_col_spec())
+        col_spec.append(self.dialect.type_compiler.process(column.type))
+
 
         # column-options: "NOT NULL"
         if not column.nullable or column.primary_key:
@@ -417,14 +420,14 @@ class DB2DDLCompiler(compiler.DDLCompiler):
         column_spec = ' '.join(col_spec)
         return column_spec
 
-    def visit_drop_index(self, drop):
+    def visit_drop_index(self, drop, **kw):
         return "\nDROP INDEX %s" % (
                         self.preparer.quote(
                                     self._index_identifier(drop.element.name),
                                     drop.element.quote)
                         )
 
-    def visit_drop_constraint(self, drop):
+    def visit_drop_constraint(self, drop, **kw):
         constraint = drop.element
         if isinstance(constraint, sa_schema.ForeignKeyConstraint):
                 qual = "FOREIGN KEY "
@@ -522,6 +525,16 @@ class DB2Dialect(default.DefaultDialect):
 
     # reflection: these all defer to an BaseDB2Reflector
     # object which selects between DB2 and AS/400 schemas
+
+    def normalize_name(self, name):
+        return self._reflector.normalize_name(name)
+
+    def denormalize_name(self, name):
+        return self._reflector.denormalize_name(name)
+
+    def _get_default_schema_name(self, connection):
+        return self._reflector._get_default_schema_name(connection)
+
     def has_table(self, connection, table_name, schema=None):
         return self._reflector.has_table(connection, table_name, schema=schema)
 
@@ -544,7 +557,7 @@ class DB2Dialect(default.DefaultDialect):
                                 connection, viewname, schema=schema, **kw)
 
     def get_columns(self, connection, table_name, schema=None, **kw):
-        return self._reflector.has_columns(
+        return self._reflector.get_columns(
                                 connection, table_name, schema=schema, **kw)
 
     def get_primary_keys(self, connection, table_name, schema=None, **kw):

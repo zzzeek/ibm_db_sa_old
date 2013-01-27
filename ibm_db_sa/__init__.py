@@ -20,19 +20,18 @@
 
 __version__ = '0.3.0'
 
-from . import ibm_db, pyodbc, zxjdbc, base
+from . import ibm_db, pyodbc, base   # zxjdbc
+
 
 # default dialect
 base.dialect = ibm_db.dialect
 
 from .base import \
-    BIGINT, BINARY, BIT, BLOB, BOOLEAN, CHAR, DATE, DATETIME, \
-    DECIMAL, DOUBLE, ENUM, DECIMAL,\
-    FLOAT, GRAPHIC, INTEGER, INTEGER, LONGBLOB, LONGTEXT, MEDIUMBLOB, \
-    MEDIUMINT, MEDIUMTEXT, NCHAR, \
-    NVARCHAR, NUMERIC, SET, SMALLINT, REAL, TEXT, TIME, TIMESTAMP, \
-    TINYBLOB, TINYINT, TINYTEXT,\
-    VARBINARY, VARCHAR, VARGRAPHIC, dialect
+    BIGINT, BLOB, CHAR, CLOB, DATE, DATETIME, \
+    DECIMAL, DOUBLE, DECIMAL,\
+    GRAPHIC, INTEGER, INTEGER, LONGVARCHAR, \
+    NUMERIC, SMALLINT, REAL, TIME, TIMESTAMP, \
+    VARCHAR, VARGRAPHIC, dialect
 
 #__all__ = (
     # TODO: (put types here)

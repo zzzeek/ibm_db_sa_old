@@ -46,8 +46,6 @@ class DB2Dialect_ibm_db(DB2Dialect):
         return connection.connection.server_info()
 
     def create_connect_args(self, url):
-        conn_args = url.translate_connect_args()
-
         # DSN support through CLI configuration (../cfg/db2cli.ini),
         # while 2 connection attributes are mandatory: database alias
         # and UID (in support to current schema), all the other
@@ -55,30 +53,26 @@ class DB2Dialect_ibm_db(DB2Dialect):
         # provided through db2cli.ini database catalog entry. Example
         # 1: ibm_db_sa:///<database_alias>?UID=db2inst1 or Example 2:
         # ibm_db_sa:///?DSN=<database_alias>;UID=db2inst1
-        if str(url).find('///') != -1:
-            dsn, uid, pwd = '', '', ''
-            if 'database' in conn_args and conn_args['database'] is not None:
-                dsn = conn_args['database']
-            else:
-                if 'DSN' in url.query and url.query['DSN'] is not None:
-                    dsn = url.query['DSN']
-            if 'UID' in url.query and url.query['UID'] is not None:
-                uid = url.query['UID']
-            if 'PWD' in url.query and url.query['PWD'] is not None:
-                pwd = url.query['PWD']
+        if not url.host:
+            dsn = url.database
+            uid = url.username
+            pwd = url.password
             return ((dsn, uid, pwd, '', ''), {})
         else:
             # Full URL string support for connection to remote data servers
             dsn_param = ['DRIVER={IBM DB2 ODBC DRIVER}']
-            dsn_param.append('DATABASE=%s' % conn_args['database'])
-            dsn_param.append('HOSTNAME=%s' % conn_args['host'])
-            dsn_param.append('PORT=%s' % conn_args['port'])
+            dsn_param.append('DATABASE=%s' % url.database)
+            dsn_param.append('HOSTNAME=%s' % url.host)
             dsn_param.append('PROTOCOL=TCPIP')
-            dsn_param.append('UID=%s' % conn_args['username'])
-            dsn_param.append('PWD=%s' % conn_args['password'])
+            if url.port:
+                dsn_param.append('PORT=%s' % url.port)
+            if url.username:
+                dsn_param.append('UID=%s' % url.username)
+            if url.password:
+                dsn_param.append('PWD=%s' % url.password)
             dsn = ';'.join(dsn_param)
             dsn += ';'
-            return ((dsn, conn_args['username'], '', '', ''), {})
+            return ((dsn, url.username, '', '', ''), {})
 
     # Retrieves current schema for the specified connection object
     def _get_default_schema_name(self, connection):
@@ -95,4 +89,4 @@ class DB2Dialect_ibm_db(DB2Dialect):
         else:
             return False
 
-dialect = DB2Dialect_ibmdb
+dialect = DB2Dialect_ibm_db
