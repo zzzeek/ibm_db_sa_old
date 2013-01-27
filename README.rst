@@ -12,17 +12,21 @@ Version
 This version is all new for version 0.8 of SQLAlchemy and will also work
 with version 0.7.
 
-Jython support is not yet available.
+Supported Environments
+----------------------
 
-Prerequisites
--------------
+- Python 2.5 or greater
+- SQLAlchemy 0.7.3 and above
+- the ibm_db_dbi DBAPI library.
 
-1. Python 2.5.x or greater.
-2. SQLAlchemy 0.7.3 or above
-3. IBM_DB driver and IBM_DB_DBI wrapper 1.0.1 or higher (ibm_db-1.0.5 is
-   a minimum) for Python, or db2jcc.jar and db2jcc_license_cu.jar for Jython
-4. Optional ClientAccess ODBC Driver, or jt400.jar and util400.jar for
-   Jython to connect to DB2 for iSeries
+Not Supported / Not Tested
+---------------------------
+
+- Python 3 has not yet been tested.
+
+- pyodbc support has not been tested.
+
+- zxjdbc/Jython support is not fully implemented.
 
 Installation
 ------------
@@ -34,21 +38,17 @@ Standard Python setup should be used::
 Connecting
 ----------
 
-1. Using default ibm_db driver
-    ibm_db_sa://user:passwd@address:port/database
+A TCP/IP connection can be specified as the following::
 
-2. Using alternate pyodbc driver
-    ibm_db_sa+pyodbc://user:passwd@address:port/database
+	from sqlalchemy import create_engine
 
-3. Special for Jython
-    ibm_db_sa+zxjdbc://user:passwd@address:port/database
+	e = create_engine("ibm_db_sa://user:pass@host[:port]/database")
 
-4. Using alternate pyodbc driver to connect to DB2 for i
-    ibm_db_sa+pyodbc400://user:passwd@address:port/database
+For a local socket connection, exclude the "host" and "port" portions::
 
-5. Special for Jython to connect to DB2 for i
-    ibm_db_sa+zxjdbc400://user:passwd@address:port/database
+	from sqlalchemy import create_engine
 
+	e = create_engine("ibm_db_sa://user:pass@/database")
 
 Supported Databases
 -------------------
@@ -60,7 +60,7 @@ Supported Databases
 Credits
 -------
 
-ibm_db_sa for SQLAlchemy was first produced by IBM, incorporated, targeting
+ibm_db_sa for SQLAlchemy was first produced by IBM Inc., targeting
 version 0.4.   The library was ported for version 0.6 and 0.7 by Jaimy Azle.
 Port for version 0.8 and modernization of test suite by Mike Bayer.
 

@@ -17,6 +17,16 @@
 # | Contributor: Mike Bayer                                                  |
 # | Version: 0.3.x                                                           |
 # +--------------------------------------------------------------------------+
+
+raise NotImplementedError(
+        "The zxjdbc dialect is not implemented at this time.")
+
+
+# NOTE: it appears that to use zxjdbc, the "RETURNING" syntax
+# must be installed in DB2, which appears to be optional.  It would
+# be best if the RETURNING support were built into the base dialect
+# and not be local to zxjdbc here.
+
 from decimal import Decimal as _python_Decimal
 from sqlalchemy import sql, util
 from sqlalchemy import types as sa_types

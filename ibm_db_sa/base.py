@@ -129,34 +129,8 @@ class _IBM_Boolean(sa_types.Boolean):
         return process
 
 
-class _IBM_DateTime(sa_types.DateTime):
-
-    def result_processor(self, dialect, coltype):
-        def process(value):
-            if value is None:
-                return None
-            if isinstance(value, datetime.datetime):
-                value = datetime.datetime(value.year, value.month, value.day,
-                         value.hour,
-                         value.minute, value.second, value.microsecond)
-            elif isinstance(value, datetime.time):
-                value = datetime.datetime(value.year,
-                                    value.month, value.day, 0, 0, 0, 0)
-            return value
-        return process
-
-    def bind_processor(self, dialect):
-        def process(value):
-            if value is None:
-                return None
-            if isinstance(value, datetime.date):
-                value = datetime.datetime(value.year, value.month,
-                                value.day, 0, 0, 0, 0)
-            return str(value)
-        return process
 
 class _IBM_Date(sa_types.Date):
-
 
     def result_processor(self, dialect, coltype):
         def process(value):
@@ -188,16 +162,18 @@ class DBCLOB(sa_types.CLOB):
 class GRAPHIC(sa_types.CHAR):
     __visit_name__ = "GRAPHIC"
 
-class VARGRAPHIC(sa_types.UnicodeText):
+class VARGRAPHIC(sa_types.Unicode):
     __visit_name__ = "VARGRAPHIC"
 
+
+class LONGVARGRAPHIC(sa_types.UnicodeText):
+    __visit_name__ = "LONGVARGRAPHIC"
 
 class XML(sa_types.Text):
     __visit_name__ = "XML"
 
 colspecs = {
     sa_types.Boolean: _IBM_Boolean,
-    sa_types.DateTime: _IBM_DateTime,
     sa_types.Date: _IBM_Date,
 # really ?
 #    sa_types.Unicode: DB2VARGRAPHIC
@@ -224,7 +200,7 @@ ischema_names = {
     'XML': XML,
     'GRAPHIC': GRAPHIC,
     'VARGRAPHIC': VARGRAPHIC,
-    'LONGVARGRAPHIC': VARGRAPHIC,
+    'LONGVARGRAPHIC': LONGVARGRAPHIC,
     'DBCLOB': DBCLOB
 }
 
@@ -271,18 +247,16 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
                 "DBCLOB(%(length)s)" % {'length': type_.length}
 
     def visit_VARCHAR(self, type_):
-        if self.dialect.supports_char_length:
-            return "LONG VARCHAR" if type_.length in (None, 0) else \
-                "VARCHAR(%(length)s)" % {'length': type_.length}
-        else:
-            return "LONG VARCHAR"
+        return "VARCHAR(%(length)s)" % {'length': type_.length}
+
+    def visit_LONGVARCHAR(self, type_):
+        return "LONG VARCHAR"
 
     def visit_VARGRAPHIC(self, type_):
-        if self.dialect.supports_char_length:
-            return "LONG VARGRAPHIC" if type_.length in (None, 0) else \
-                "VARGRAPHIC(%(length)s)" % {'length': type_.length}
-        else:
-            return "LONG VARGRAPHIC"
+        return "VARGRAPHIC(%(length)s)" % {'length': type_.length}
+
+    def visit_LONGVARGRAPHIC(self, type_):
+        return "LONG VARGRAPHIC"
 
     def visit_CHAR(self, type_):
         return "CHAR" if type_.length in (None, 0) else \
@@ -327,7 +301,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         return self.visit_VARGRAPHIC(type_)
 
     def visit_unicode_text(self, type_):
-        return self.visit_VARGRAPHIC(type_)
+        return self.visit_LONGVARGRAPHIC(type_)
 
     def visit_string(self, type_):
         return self.visit_VARCHAR(type_)
@@ -539,7 +513,7 @@ class DB2Dialect(default.DefaultDialect):
         return self._reflector.has_table(connection, table_name, schema=schema)
 
     def has_sequence(self, connection, sequence_name, schema=None):
-        return self._reflector.has_table(connection, sequence_name,
+        return self._reflector.has_sequence(connection, sequence_name,
                         schema=schema)
 
     def get_schema_names(self, connection, **kw):

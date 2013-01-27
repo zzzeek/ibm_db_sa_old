@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from sys import platform
-from setuptools import setup, find_packages
-from distutils.core import setup
+from setuptools import setup
 import os
 import re
 
@@ -20,8 +18,7 @@ setup(
          description='SQLAlchemy support for IBM Data Servers',
          author='IBM Application Development Team',
          author_email='opendev@us.ibm.com',
-         url='http://pypi.python.org/pypi/ibm_db/',
-         download_url='http://code.google.com/p/ibm-db/downloads/list',
+         url='http://github.com/zzzeek/ibm_db_sa',
          keywords='sqlalchemy database interface IBM Data Servers DB2 Informix IDS',
          classifiers=[
             'Development Status :: 4 - Beta',
@@ -45,5 +42,4 @@ setup(
        },
        zip_safe=False,
        tests_require=['nose >= 0.11'],
-       #test_suite="sqla_nose.py",
      )
