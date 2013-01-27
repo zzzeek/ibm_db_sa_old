@@ -30,6 +30,11 @@ from sqlalchemy.engine import reflection
 
 from . import reflection as ibm_reflection
 
+from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER,\
+    SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, DOUBLE, TIME, TIMESTAMP,\
+    VARCHAR
+
+
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
 RESERVED_WORDS = set(
@@ -173,6 +178,9 @@ class _IBM_Date(sa_types.Date):
             return str(value)
         return process
 
+class LONGVARCHAR(sa_types.VARCHAR):
+    __visit_name_ = 'LONGVARCHAR'
+
 class DBCLOB(sa_types.CLOB):
     __visit_name__ = "DBCLOB"
 
@@ -192,6 +200,31 @@ colspecs = {
     sa_types.Date: _IBM_Date,
 # really ?
 #    sa_types.Unicode: IBM_DBVARGRAPHIC
+}
+
+ischema_names = {
+    'BLOB': BLOB,
+    'CHAR': CHAR,
+    'CHARACTER': CHAR,
+    'CLOB': CLOB,
+    'DATE': DATE,
+    'DATETIME': DATETIME,
+    'INTEGER': INTEGER,
+    'SMALLINT': SMALLINT,
+    'BIGINT': BIGINT,
+    'DECIMAL': DECIMAL,
+    'NUMERIC': NUMERIC,
+    'REAL': REAL,
+    'DOUBLE': DOUBLE,
+    'TIME': TIME,
+    'TIMESTAMP': TIMESTAMP,
+    'VARCHAR': VARCHAR,
+    'LONGVARCHAR': LONGVARCHAR,
+    'XML': XML,
+    'GRAPHIC': GRAPHIC,
+    'VARGRAPHIC': VARGRAPHIC,
+    'LONGVARGRAPHIC': VARGRAPHIC,
+    'DBCLOB': DBCLOB
 }
 
 
@@ -455,7 +488,7 @@ class IBM_DBDialect(default.DefaultDialect):
     encoding = 'utf-8'
     default_paramstyle = 'named'
     colspecs = colspecs
-    ischema_names = reflection.ischema_names
+    ischema_names = ischema_names
     supports_char_length = False
     supports_unicode_statements = False
     supports_unicode_binds = False

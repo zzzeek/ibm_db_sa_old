@@ -18,9 +18,7 @@
 # | Version: 0.3.x                                                           |
 # +--------------------------------------------------------------------------+
 
-from sqlalchemy import schema, sql, util
-from sqlalchemy import types as sa_types
-from sqlalchemy.engine import reflection
+from sqlalchemy import util
 from ibm_db_sa import base as ibm_base
 
 class IBM_DB_SAExecutionContext(ibm_base.IBM_DBExecutionContext):
