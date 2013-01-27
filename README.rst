@@ -1,0 +1,66 @@
+IBM_DB_SA
+=========
+
+The IBM_DB_SA adapter provides the Python/SQLAlchemy interface to IBM
+Data Servers.
+
+Version
+--------
+
+0.3.0 (2013/01/26)
+
+This version is all new for version 0.8 of SQLAlchemy and will also work
+with version 0.7.
+
+Jython support is not yet available.
+
+Prerequisites
+-------------
+
+1. Python 2.5.x or greater.
+2. SQLAlchemy 0.7.3 or above
+3. IBM_DB driver and IBM_DB_DBI wrapper 1.0.1 or higher (ibm_db-1.0.5 is
+   a minimum) for Python, or db2jcc.jar and db2jcc_license_cu.jar for Jython
+4. Optional ClientAccess ODBC Driver, or jt400.jar and util400.jar for
+   Jython to connect to DB2 for iSeries
+
+Installation
+------------
+
+Standard Python setup should be used::
+
+  python setup.py install
+
+Connecting
+----------
+
+1. Using default ibm_db driver
+    ibm_db_sa://user:passwd@address:port/database
+
+2. Using alternate pyodbc driver
+    ibm_db_sa+pyodbc://user:passwd@address:port/database
+
+3. Special for Jython
+    ibm_db_sa+zxjdbc://user:passwd@address:port/database
+
+4. Using alternate pyodbc driver to connect to DB2 for i
+    ibm_db_sa+pyodbc400://user:passwd@address:port/database
+
+5. Special for Jython to connect to DB2 for i
+    ibm_db_sa+zxjdbc400://user:passwd@address:port/database
+
+
+Supported Databases
+-------------------
+
+- IBM DB2 Universal Database for Linux/Unix/Windows versions 9.7 onwards
+- Remote connections to i5/OS (iSeries)
+- Remote connections to z/OS (DB2 UDB for zOS), only by default ibm_db drivers
+
+Credits
+-------
+
+ibm_db_sa for SQLAlchemy was first produced by IBM, incorporated, targeting
+version 0.4.   The library was ported for version 0.6 and 0.7 by Jaimy Azle.
+Port for version 0.8 and modernization of test suite by Mike Bayer.
+

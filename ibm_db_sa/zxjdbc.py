@@ -22,43 +22,9 @@ from sqlalchemy import sql, util
 from sqlalchemy import types as sa_types
 from sqlalchemy.engine.base import FullyBufferedResultProxy, ResultProxy
 from sqlalchemy.connectors.zxJDBC import ZxJDBCConnector
-from ibm_db_sa import base as ibm_base
-
-__all__ = (
-'IBM_DBZxJDBCDialect', 'dialect'
-)
-
-SQLException = zxJDBC = None
-
-class IBM_DBZxJDBCDate(sa_types.Date):
-
-    def result_processor(self, dialect, coltype):
-        def process(value):
-            if value is None:
-                return None
-            else:
-                return value.date()
-        return process
+from .base import DB2Dialect, DB2ExecutionContext, DB2Compiler
 
 
-class IBM_DBZxJDBCNumeric(sa_types.Numeric):
-
-    def result_processor(self, dialect, coltype):
-        if self.asdecimal:
-            def process(value):
-                if isinstance(value, _python_Decimal):
-                    return value
-                elif (value == None):
-                    return None
-                else:
-                    return _python_Decimal(str(value))
-        else:
-            def process(value):
-                if isinstance(value, _python_Decimal):
-                    return float(value)
-                else:
-                    return value
-        return process
 
 class ReturningResultProxy(FullyBufferedResultProxy):
 
@@ -84,7 +50,6 @@ class ReturningParam(object):
 
     """A bindparam value representing a RETURNING parameter.
 
-    Specially handled by IBM_DB2DataHandler.
     """
 
     def __init__(self, type):
@@ -102,10 +67,11 @@ class ReturningParam(object):
 
     def __repr__(self):
         kls = self.__class__
-        return '<%s.%s object at 0x%x type=%s>' % (kls.__module__, kls.__name__, id(self),
+        return '<%s.%s object at 0x%x type=%s>' % (
+                kls.__module__, kls.__name__, id(self),
                                                    self.type)
 
-class IBM_DBZxJDBCExecutionContext(ibm_base.IBM_DBExecutionContext):
+class DB2ExecutionContext_zxjdbc(DB2ExecutionContext):
 
     def pre_exec(self):
         if hasattr(self.compiled, 'returning_parameters'):
@@ -142,7 +108,7 @@ class IBM_DBZxJDBCExecutionContext(ibm_base.IBM_DBExecutionContext):
         cursor.datahandler = self.dialect.DataHandler(cursor.datahandler)
         return cursor
 
-class IBM_DBZxJDBCCompiler(ibm_base.IBM_DBCompiler):
+class DB2Compiler_zxjdbc(DB2Compiler):
 
     def returning_clause(self, stmt, returning_cols):
         self.returning_cols = list(expression._select_iterables(returning_cols))
@@ -165,59 +131,51 @@ class IBM_DBZxJDBCCompiler(ibm_base.IBM_DBCompiler):
 
         return 'RETURNING ' + ', '.join(columns) +  " INTO " + ", ".join(binds)
 
-class IBM_DBZxJDBCDialect(ZxJDBCConnector, ibm_base.IBM_DBDialect):
+class DB2Dialect_zxjdbc(ZxJDBCConnector, DB2Dialect):
 
     supports_unicode_statements = supports_unicode_binds = \
     returns_unicode_strings = supports_unicode = False
-    supports_sane_rowcount        = False
-    supports_sane_multi_rowcount  = False
+    supports_sane_rowcount = False
+    supports_sane_multi_rowcount = False
 
     jdbc_db_name = 'db2'
     jdbc_driver_name = 'com.ibm.db2.jcc.DB2Driver'
 
-    statement_compiler = IBM_DBZxJDBCCompiler
-    execution_ctx_cls = IBM_DBZxJDBCExecutionContext
+    statement_compiler = DB2Compiler_zxjdbc
+    execution_ctx_cls = DB2ExecutionContext_zxjdbc
 
-    colspecs = util.update_copy(
-      ibm_base.IBM_DBDialect.colspecs,
-      {
-            sa_types.Date : IBM_DBZxJDBCDate,
-            sa_types.Numeric: IBM_DBZxJDBCNumeric
-      }
-    )
-
-    def __init__(self, use_ansiquotes=None, **kwargs):
-        super(IBM_DBZxJDBCDialect, self).__init__(**kwargs)
-        self.paramstyle = IBM_DBZxJDBCDialect.dbapi().paramstyle
+    @classmethod
+    def dbapi(cls):
 
         global SQLException, zxJDBC
         from java.sql import SQLException, Types as java_Types
         from com.ziclix.python.sql import zxJDBC
         from com.ziclix.python.sql import FilterDataHandler
 
+        # TODO: this should be somewhere else
         class IBM_DB2DataHandler(FilterDataHandler):
 
-          def setJDBCObject(self, statement, index, object, dbtype=None):
-            if type(object) is ReturningParam:
-              statement.registerReturnParameter(index, object.type)
-            elif dbtype is None:
-              if (isinstance(object, int)):
-                statement.setObject(index, str(object), java_Types.BIGINT)
-              elif (isinstance(object, _python_Decimal)):
-                statement.setObject(index, str(object), java_Types.DECIMAL)
-              else:
-                statement.setObject(index, object)
-            else:
-              FilterDataHandler.setJDBCObject(self, statement, index, object, dbtype)
+            def setJDBCObject(self, statement, index, object, dbtype=None):
+                if type(object) is ReturningParam:
+                    statement.registerReturnParameter(index, object.type)
+                elif dbtype is None:
+                    if (isinstance(object, int)):
+                        statement.setObject(index, str(object), java_Types.BIGINT)
+                    elif (isinstance(object, _python_Decimal)):
+                        statement.setObject(index, str(object), java_Types.DECIMAL)
+                    else:
+                        statement.setObject(index, object)
+                else:
+                    FilterDataHandler.setJDBCObject(self, statement, index, object, dbtype)
 
-        self.DataHandler = IBM_DB2DataHandler
+        cls.DataHandler = IBM_DB2DataHandler
+        return zxJDBC
 
 
-class IBM_DB400ZxJDBCDialect(IBM_DBZxJDBCDialect):
+class AS400Dialect_zxjdbc(DB2Dialect_zxjdbc):
     jdbc_db_name = 'as400'
     jdbc_driver_name = 'com.ibm.as400.access.AS400JDBCDriver'
 
 
 
-dialect = IBM_DBZxJDBCDialect
 

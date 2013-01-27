@@ -20,30 +20,23 @@
 from sqlalchemy import util
 import urllib
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
-from .base import _SelectLastRowIDMixin, IBM_DBExecutionContext, IBM_DBDialect
+from .base import _SelectLastRowIDMixin, DB2ExecutionContext, DB2Dialect
 
 
 
-class IBM_DBExecutionContext_pyodbc(_SelectLastRowIDMixin, IBM_DBExecutionContext):
+class DB2ExecutionContext_pyodbc(_SelectLastRowIDMixin, DB2ExecutionContext):
     pass
 
-
-
-class IBM_DBPyODBCDialect(PyODBCConnector, IBM_DBDialect):
+class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
     supports_unicode_statements = False
     supports_native_decimal = True
     supports_char_length = True
     supports_native_decimal = False
 
-    execution_ctx_cls = IBM_DBExecutionContext_pyodbc
+    execution_ctx_cls = DB2ExecutionContext_pyodbc
 
     pyodbc_driver_name = "IBM DB2 ODBC DRIVER"
-
-    def __init__(self, use_ansiquotes=None, **kwargs):
-        kwargs.setdefault('convert_unicode', True)
-        super(IBM_DBPyODBCDialect, self).__init__(**kwargs)
-        self.paramstyle = IBM_DBPyODBCDialect.dbapi().paramstyle
 
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
@@ -99,7 +92,7 @@ class IBM_DBPyODBCDialect(PyODBCConnector, IBM_DBDialect):
                 connectors.extend(['%s=%s' % (k, v) for k, v in keys.iteritems()])
         return [[";".join(connectors)], connect_args]
 
-class IBM_DB400PyODBCDialect(PyODBCConnector, IBM_DBDialect):
+class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
     supports_unicode_statements = False
     supports_sane_rowcount = False
@@ -110,11 +103,4 @@ class IBM_DB400PyODBCDialect(PyODBCConnector, IBM_DBDialect):
 
     pyodbc_driver_name = "IBM DB2 ODBC DRIVER"
 
-    def __init__(self, use_ansiquotes=None, **kwargs):
-        kwargs.setdefault('convert_unicode', True)
-        super(IBM_DB400PyODBCDialect, self).__init__(**kwargs)
-        self.paramstyle = IBM_DB400PyODBCDialect.dbapi().paramstyle
 
-
-
-dialect = IBM_DBPyODBCDialect

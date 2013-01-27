@@ -26,8 +26,6 @@ from sqlalchemy import schema as sa_schema
 from sqlalchemy.sql import compiler
 from sqlalchemy.engine import default
 
-from sqlalchemy.engine import reflection
-
 from . import reflection as ibm_reflection
 
 from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER,\
@@ -199,7 +197,7 @@ colspecs = {
     sa_types.DateTime: _IBM_DateTime,
     sa_types.Date: _IBM_Date,
 # really ?
-#    sa_types.Unicode: IBM_DBVARGRAPHIC
+#    sa_types.Unicode: DB2VARGRAPHIC
 }
 
 ischema_names = {
@@ -228,7 +226,7 @@ ischema_names = {
 }
 
 
-class IBM_DBTypeCompiler(compiler.GenericTypeCompiler):
+class DB2TypeCompiler(compiler.GenericTypeCompiler):
 
 
     def visit_TIMESTAMP(self, type_):
@@ -338,7 +336,7 @@ class IBM_DBTypeCompiler(compiler.GenericTypeCompiler):
         return self.visit_BLOB(type_)
 
 
-class IBM_DBCompiler(compiler.SQLCompiler):
+class DB2Compiler(compiler.SQLCompiler):
 
 
     def visit_now_func(self, fn, **kw):
@@ -395,7 +393,7 @@ class IBM_DBCompiler(compiler.SQLCompiler):
              self.process(join.onclause, **kwargs)))
 
 
-class IBM_DBDDLCompiler(compiler.DDLCompiler):
+class DB2DDLCompiler(compiler.DDLCompiler):
 
     def get_column_specification(self, column, **kw):
         col_spec = [self.preparer.format_column(column)]
@@ -444,15 +442,16 @@ class IBM_DBDDLCompiler(compiler.DDLCompiler):
                                 (self.preparer.format_table(constraint.table),
                                 qual, const)
 
-class IBM_DBIdentifierPreparer(compiler.IdentifierPreparer):
+class DB2IdentifierPreparer(compiler.IdentifierPreparer):
 
     reserved_words = RESERVED_WORDS
     illegal_initial_characters = set(xrange(0, 10)).union(["_", "$"])
 
 
 
-class IBM_DBExecutionContext(default.DefaultExecutionContext):
+class DB2ExecutionContext(default.DefaultExecutionContext):
     pass
+
 
 class _SelectLastRowIDMixin(object):
     _select_lastrowid = False
@@ -487,9 +486,9 @@ class _SelectLastRowIDMixin(object):
                 self._lastrowid = int(row[0])
 
 
-class IBM_DBDialect(default.DefaultDialect):
+class DB2Dialect(default.DefaultDialect):
 
-    name = 'ibm_db_sa'
+    name = 'db2'
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'named'
@@ -508,20 +507,20 @@ class IBM_DBDialect(default.DefaultDialect):
     supports_sequences = True
     sequences_optional = True
 
-    statement_compiler = IBM_DBCompiler
-    ddl_compiler = IBM_DBDDLCompiler
-    type_compiler = IBM_DBTypeCompiler
-    preparer = IBM_DBIdentifierPreparer
-    execution_ctx_cls = IBM_DBExecutionContext
+    statement_compiler = DB2Compiler
+    ddl_compiler = DB2DDLCompiler
+    type_compiler = DB2TypeCompiler
+    preparer = DB2IdentifierPreparer
+    execution_ctx_cls = DB2ExecutionContext
 
-    _reflector_cls = ibm_reflection.IBM_DBReflector
+    _reflector_cls = ibm_reflection.DB2Reflector
 
     def __init__(self, **kw):
-        super(IBM_DBDialect, self).__init__(**kw)
+        super(DB2Dialect, self).__init__(**kw)
 
         self._reflector = self._reflector_cls(self)
 
-    # reflection: these all defer to an BaseIBM_DBReflector
+    # reflection: these all defer to an BaseDB2Reflector
     # object which selects between DB2 and AS/400 schemas
     def has_table(self, connection, table_name, schema=None):
         return self._reflector.has_table(connection, table_name, schema=schema)

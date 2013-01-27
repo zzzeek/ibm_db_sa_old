@@ -18,6 +18,8 @@
 # | Version: 0.3.x                                                           |
 # +--------------------------------------------------------------------------+
 
+__version__ = '0.3.0'
+
 from . import ibm_db, pyodbc, zxjdbc, base
 
 # default dialect

@@ -568,7 +568,7 @@ class IBM_DB400Reflector(BaseIBM_DBReflector):
         indexes = {}
         for r in connection.execute(query):
             key = r[0].upper()
-            if indexes.has_key(key):
+            if key in indexes:
                 indexes[key]['column_names'].append(self.normalize_name(r[2]))
             else:
                 indexes[key] = {
